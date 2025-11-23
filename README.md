@@ -4,10 +4,10 @@
 
 ## Tính năng chính
 - Khởi động tự động phát nhạc khi mở ứng dụng.
-- Giao diện đẹp, nút Play/Stop/Pause-Resume, nút chọn bài, nút phát ngẫu nhiên.
+- Giao diện đẹp với bảng playlist (double-click để phát), nút Play/Stop/Pause-Resume, nút chọn bài, nút phát ngẫu nhiên.
 - Thanh trượt điều chỉnh âm lượng.
 - Hiển thị tên bài hát và thời gian đã phát, đếm ngược thời gian còn lại trước khi tắt máy.
-- Thêm bài nhanh bằng hộp thoại chọn file; hỗ trợ MP3/WAV/OGG/FLAC.
+- Thêm bài nhanh bằng hộp thoại chọn nhiều file; hỗ trợ MP3/WAV/OGG/FLAC.
 - Tự tắt Raspberry Pi sau 15 phút (có thể bật chế độ thử `DRY_RUN_SHUTDOWN=1`).
 
 ## Cài đặt
@@ -18,7 +18,13 @@ pip3 install -r requirements.txt
 
 ## Chuẩn bị nhạc
 - Tạo thư mục `music/` cùng cấp với `app.py` và đặt các file nhạc (.mp3, .wav, .ogg, .flac) vào đó; ứng dụng sẽ tự phát bài đầu tiên.
-- Bạn có thể thêm/chọn bài khác trực tiếp trong ứng dụng bằng nút **Add or change track**.
+- Bạn có thể thêm/chọn bài khác trực tiếp trong ứng dụng bằng nút **Add music**.
+
+## Quản lý playlist trực quan
+- Danh sách playlist nằm bên trái, có scrollbar; double-click vào bài để phát ngay.
+- Chọn nhiều file một lúc bằng nút **Add music** để thêm nhanh vào playlist (không trùng lặp).
+- Nút **Play random / Next random** sẽ chuyển sang bài khác bất kỳ và cập nhật highlight trong danh sách.
+- Khi ứng dụng đang dừng, click chọn một bài sẽ hiển thị trước tên bài; bấm **Play** để phát hoặc double-click để phát luôn.
 
 ## Chạy ứng dụng thủ công
 ```bash
