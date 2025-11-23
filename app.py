@@ -391,7 +391,9 @@ class MusicPlayer:
                 fill=color,
                 tags="gradient",
             )
-        self.bg_canvas.lower()
+        # Keep the gradient behind any future canvas content without requiring a tag
+        # argument (which caused errors on some Tk versions).
+        self.bg_canvas.tag_lower("gradient")
 
     def set_volume(self, value: str | float) -> None:
         try:
