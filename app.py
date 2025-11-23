@@ -4,6 +4,7 @@ Tkinter + pygame music player for Raspberry Pi with 15-minute shutdown.
 from __future__ import annotations
 
 import os
+import platform
 import random
 import subprocess
 import time
@@ -38,7 +39,7 @@ class MusicPlayer:
         self.paused = False
         self.track_started_at: Optional[float] = None
         self.shutdown_command = os.environ.get(
-            "PLAYER_SHUTDOWN_COMMAND", "sudo shutdown -h now"
+            "PLAYER_SHUTDOWN_COMMAND", self.default_shutdown_command()
         )
         self.dry_run_shutdown = os.environ.get("DRY_RUN_SHUTDOWN") == "1"
 
@@ -303,6 +304,11 @@ class MusicPlayer:
             subprocess.Popen(self.shutdown_command.split())
         except Exception as exc:  # pylint: disable=broad-except
             messagebox.showerror("Shutdown failed", f"Could not shutdown: {exc}")
+
+    def default_shutdown_command(self) -> str:
+        if platform.system().lower().startswith("win"):
+            return "shutdown /s /t 0"
+        return "sudo shutdown -h now"
 
     def auto_start_playback(self) -> None:
         if self.current_index is not None:

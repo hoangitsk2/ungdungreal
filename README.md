@@ -29,6 +29,14 @@ python3 app.py
 DRY_RUN_SHUTDOWN=1 python3 app.py
 ```
 
+### Chạy thử trên Windows
+- Cài Python 3, Tkinter (đi kèm Python) và `pip install -r requirements.txt`.
+- Lệnh tắt máy mặc định sẽ tự động dùng `shutdown /s /t 0` trên Windows; để tránh tắt máy khi thử, đặt `DRY_RUN_SHUTDOWN=1` hoặc ghi đè lệnh bằng `PLAYER_SHUTDOWN_COMMAND="shutdown /a"`.
+- Kiểm tra mã nguồn nhanh bằng:
+```bash
+python -m py_compile app.py
+```
+
 ## Thiết lập tự khởi động khi bật Raspberry Pi
 Tạo service systemd để ứng dụng mở cùng hệ thống và tự phát nhạc:
 ```bash
