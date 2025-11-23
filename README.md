@@ -18,14 +18,15 @@ pip3 install -r requirements.txt
 
 ## Chuẩn bị nhạc
 - Thư mục `music/` đã có sẵn trong bộ mã nguồn; hãy chép file nhạc (.mp3, .wav, .ogg, .flac) trực tiếp vào đây để ứng dụng tự nhận. Nếu playlist đang trống, ứng dụng sẽ phát bài đầu tiên trong thư mục này.
-- Playlist được lưu vào `playlist.txt` với đường dẫn tương đối tới thư mục `music/` (nếu bài nằm trong đó). Bạn có thể mở file này và thêm tên file vào mỗi dòng để nạp sẵn danh sách.
-- Nút **Add music** sẽ sao chép file bạn chọn vào thư mục `music/` (tự đổi tên nếu trùng) rồi thêm vào playlist và lưu lại `playlist.txt`.
+- Mỗi playlist riêng được lưu dưới dạng file `.txt` trong thư mục `playlists/` (được tạo sẵn). Đường dẫn nên ghi tương đối tới `music/` để tiện mang app đi nơi khác.
+- Nút **Add music** sẽ sao chép file bạn chọn vào thư mục `music/` (tự đổi tên nếu trùng) rồi thêm vào playlist đang mở và lưu lại file `.txt` tương ứng.
 
 ## Quản lý playlist trực quan
 - Danh sách playlist nằm bên trái, có scrollbar; double-click vào bài để phát ngay.
 - Chọn nhiều file một lúc bằng nút **Add music** để thêm nhanh vào playlist (không trùng lặp).
 - Nút **Play random / Next random** sẽ chuyển sang bài khác bất kỳ và cập nhật highlight trong danh sách.
 - Khi ứng dụng đang dừng, click chọn một bài sẽ hiển thị trước tên bài; bấm **Play** để phát hoặc double-click để phát luôn.
+- Nút **New playlist** cho phép tạo nhiều playlist khác nhau; chọn playlist bằng combobox phía trên danh sách để chuyển nhanh.
 
 ## Chạy ứng dụng thủ công
 ```bash

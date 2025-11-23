@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import platform
 import random
+import re
 import shutil
 import subprocess
 import time
@@ -14,14 +15,15 @@ from typing import List, Optional
 
 import pygame
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 
 
 SESSION_LIMIT_SECONDS = 15 * 60
 DEFAULT_VOLUME = 0.7
 SUPPORTED_EXTENSIONS = {".mp3", ".wav", ".ogg", ".flac"}
 MUSIC_DIR = Path(__file__).parent / "music"
-PLAYLIST_FILE = Path(__file__).parent / "playlist.txt"
+PLAYLISTS_DIR = Path(__file__).parent / "playlists"
+LEGACY_PLAYLIST_FILE = Path(__file__).parent / "playlist.txt"
 
 
 class MusicPlayer:
@@ -35,10 +37,11 @@ class MusicPlayer:
         self.session_start = time.monotonic()
         self.session_limit = SESSION_LIMIT_SECONDS
 
-        self.playlist: List[Path] = self.load_playlist()
+        self.playlist_names = self._ensure_playlists()
+        self.current_playlist_name = self.playlist_names[0]
+        self.playlist: List[Path] = self.load_playlist(self.current_playlist_name)
         self.current_index: Optional[int] = 0 if self.playlist else None
-        if self.playlist and not PLAYLIST_FILE.exists():
-            self.save_playlist()
+        self.save_playlist()
         self.playing = False
         self.paused = False
         self.track_started_at: Optional[float] = None
@@ -66,12 +69,45 @@ class MusicPlayer:
             self.playlist_box.selection_clear(0, tk.END)
             self.playlist_box.selection_set(self.current_index)
             self.playlist_box.see(self.current_index)
+        self.playlist_selector.configure(values=self.playlist_names)
+        self.playlist_selector.set(self.current_playlist_name)
 
-    def load_playlist(self) -> List[Path]:
+    def playlist_path(self, name: str) -> Path:
+        return PLAYLISTS_DIR / f"{name}.txt"
+
+    def _ensure_playlists(self) -> List[str]:
         MUSIC_DIR.mkdir(parents=True, exist_ok=True)
+        PLAYLISTS_DIR.mkdir(parents=True, exist_ok=True)
+        migrated = False
+        default_path = self.playlist_path("default")
+        if LEGACY_PLAYLIST_FILE.exists() and not default_path.exists():
+            try:
+                shutil.copy2(LEGACY_PLAYLIST_FILE, default_path)
+                migrated = True
+            except OSError:
+                pass
+        playlist_names = [
+            p.stem for p in PLAYLISTS_DIR.glob("*.txt") if p.stem.strip()
+        ]
+        if not playlist_names:
+            try:
+                default_path.write_text(
+                    "# Default playlist saved here. One track path per line.\n", encoding="utf-8"
+                )
+            except OSError:
+                pass
+            playlist_names.append("default")
+        playlist_names = sorted(set(playlist_names))
+        if migrated and "default" not in playlist_names:
+            playlist_names.append("default")
+        return playlist_names
+
+    def load_playlist(self, playlist_name: str) -> List[Path]:
+        MUSIC_DIR.mkdir(parents=True, exist_ok=True)
+        target_file = self.playlist_path(playlist_name)
         playlist: List[Path] = []
-        if PLAYLIST_FILE.exists():
-            for line in PLAYLIST_FILE.read_text(encoding="utf-8").splitlines():
+        if target_file.exists():
+            for line in target_file.read_text(encoding="utf-8").splitlines():
                 path = self._resolve_saved_path(line.strip())
                 if path:
                     playlist.append(path)
@@ -83,7 +119,7 @@ class MusicPlayer:
 
     def save_playlist(self) -> None:
         try:
-            PLAYLIST_FILE.write_text(
+            self.playlist_path(self.current_playlist_name).write_text(
                 "\n".join(self._serialize_track_path(p) for p in self.playlist),
                 encoding="utf-8",
             )
@@ -109,6 +145,41 @@ class MusicPlayer:
         if candidate.suffix.lower() in SUPPORTED_EXTENSIONS and candidate.exists():
             return candidate
         return None
+
+    def switch_playlist(self, playlist_name: str) -> None:
+        if playlist_name == self.current_playlist_name:
+            return
+        self.save_playlist()
+        self.stop()
+        self.current_playlist_name = playlist_name
+        self.playlist = self.load_playlist(playlist_name)
+        self.current_index = 0 if self.playlist else None
+        if self.playlist:
+            self.play()
+        else:
+            self.track_label.config(text="Playlist is empty. Add music.")
+            self.refresh_playlist_box()
+
+    def create_playlist(self) -> None:
+        name = simpledialog.askstring("New playlist", "Tên playlist mới?", parent=self.root)
+        if not name:
+            return
+        sanitized = re.sub(r"[^A-Za-z0-9_-]+", "_", name).strip("_")
+        if not sanitized:
+            messagebox.showerror("Invalid name", "Tên playlist cần có ký tự hợp lệ.")
+            return
+        if sanitized in self.playlist_names:
+            messagebox.showinfo("Exists", "Playlist này đã tồn tại.")
+            return
+        target = self.playlist_path(sanitized)
+        try:
+            target.write_text("# New playlist. One track per line.\n", encoding="utf-8")
+        except OSError as exc:
+            messagebox.showerror("Cannot create", f"Không tạo được playlist: {exc}")
+            return
+        self.playlist_names.append(sanitized)
+        self.playlist_names = sorted(set(self.playlist_names))
+        self.switch_playlist(sanitized)
 
     def _build_ui(self) -> None:
         self.bg_canvas = tk.Canvas(self.root, highlightthickness=0, borderwidth=0)
@@ -159,11 +230,30 @@ class MusicPlayer:
         playlist_frame = ttk.Frame(content, padding=(0, 0, 12, 0))
         playlist_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        header_row = ttk.Frame(playlist_frame)
+        header_row.pack(fill=tk.X)
         ttk.Label(
-            playlist_frame,
+            header_row,
             text="Playlist",
             font=("Segoe UI", 11, "bold"),
-        ).pack(anchor="w", pady=(0, 6))
+        ).pack(side=tk.LEFT, pady=(0, 6))
+        ttk.Button(
+            header_row,
+            text="New playlist",
+            style="Secondary.TButton",
+            command=self.create_playlist,
+        ).pack(side=tk.RIGHT)
+
+        self.playlist_selector = ttk.Combobox(
+            playlist_frame,
+            state="readonly",
+            values=self.playlist_names,
+        )
+        self.playlist_selector.set(self.current_playlist_name)
+        self.playlist_selector.bind(
+            "<<ComboboxSelected>>", lambda _e: self.switch_playlist(self.playlist_selector.get())
+        )
+        self.playlist_selector.pack(fill=tk.X, pady=(6, 8))
 
         listbox_frame = ttk.Frame(playlist_frame)
         listbox_frame.pack(fill=tk.BOTH, expand=True)
@@ -380,6 +470,8 @@ class MusicPlayer:
             if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
                 continue
             copied_path = self._copy_into_music_dir(path)
+            if copied_path is None:
+                continue
             valid_paths.append(copied_path)
             if copied_path not in self.playlist:
                 self.playlist.append(copied_path)
@@ -395,7 +487,7 @@ class MusicPlayer:
         if added_any or self.playlist:
             self.play()
 
-    def _copy_into_music_dir(self, source: Path) -> Path:
+    def _copy_into_music_dir(self, source: Path) -> Optional[Path]:
         try:
             MUSIC_DIR.mkdir(parents=True, exist_ok=True)
         except OSError:
@@ -412,7 +504,7 @@ class MusicPlayer:
             shutil.copy2(resolved_source, destination)
         except OSError as exc:
             messagebox.showerror("Copy failed", f"Could not copy {resolved_source.name}: {exc}")
-            return resolved_source
+            return None
         return destination.resolve()
 
     def preview_selected_track(self, event: object) -> None:

@@ -1,0 +1,2 @@
+# Default playlist for Pi Music Player.
+# Mỗi dòng là một bài nhạc (ưu tiên đường dẫn tương đối tới thư mục music/).
