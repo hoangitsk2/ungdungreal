@@ -1,0 +1,3 @@
+# Đặt mỗi đường dẫn file nhạc trên một dòng (hỗ trợ MP3/WAV/OGG/FLAC).
+# Bạn có thể dùng đường dẫn tuyệt đối hoặc tương đối so với thư mục này.
+# Ứng dụng sẽ tự cập nhật tập tin này khi bạn bấm "Add music" để thêm bài.

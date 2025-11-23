@@ -4,10 +4,10 @@
 
 ## Tính năng chính
 - Khởi động tự động phát nhạc khi mở ứng dụng.
-- Giao diện đẹp với bảng playlist (double-click để phát), nút Play/Stop/Pause-Resume, nút chọn bài, nút phát ngẫu nhiên.
+- Giao diện đẹp với nền gradient, bảng playlist (double-click để phát), nút Play/Stop/Pause-Resume, nút chọn bài, nút phát ngẫu nhiên.
 - Thanh trượt điều chỉnh âm lượng.
 - Hiển thị tên bài hát và thời gian đã phát, đếm ngược thời gian còn lại trước khi tắt máy.
-- Thêm bài nhanh bằng hộp thoại chọn nhiều file; hỗ trợ MP3/WAV/OGG/FLAC.
+- Thêm bài nhanh bằng hộp thoại chọn nhiều file; hỗ trợ MP3/WAV/OGG/FLAC; playlist được lưu ở `playlist.txt` để lần sau mở lên vẫn giữ nguyên.
 - Tự tắt Raspberry Pi sau 15 phút (có thể bật chế độ thử `DRY_RUN_SHUTDOWN=1`).
 
 ## Cài đặt
@@ -17,8 +17,9 @@ pip3 install -r requirements.txt
 ```
 
 ## Chuẩn bị nhạc
-- Tạo thư mục `music/` cùng cấp với `app.py` và đặt các file nhạc (.mp3, .wav, .ogg, .flac) vào đó; ứng dụng sẽ tự phát bài đầu tiên.
-- Bạn có thể thêm/chọn bài khác trực tiếp trong ứng dụng bằng nút **Add music**.
+- Tạo thư mục `music/` cùng cấp với `app.py` và đặt các file nhạc (.mp3, .wav, .ogg, .flac) vào đó; ứng dụng sẽ tự phát bài đầu tiên nếu playlist chưa có gì.
+- Playlist được lưu vào `playlist.txt` (mỗi dòng là một đường dẫn file nhạc, có thể là tuyệt đối). Bạn có thể tự thêm dòng vào file này để nạp sẵn danh sách khi mở ứng dụng.
+- Bạn có thể thêm/chọn bài khác trực tiếp trong ứng dụng bằng nút **Add music** (các bài mới cũng sẽ được lưu vào `playlist.txt`).
 
 ## Quản lý playlist trực quan
 - Danh sách playlist nằm bên trái, có scrollbar; double-click vào bài để phát ngay.

@@ -20,6 +20,7 @@ SESSION_LIMIT_SECONDS = 15 * 60
 DEFAULT_VOLUME = 0.7
 SUPPORTED_EXTENSIONS = {".mp3", ".wav", ".ogg", ".flac"}
 MUSIC_DIR = Path(__file__).parent / "music"
+PLAYLIST_FILE = Path(__file__).parent / "playlist.txt"
 
 
 class MusicPlayer:
@@ -35,6 +36,8 @@ class MusicPlayer:
 
         self.playlist: List[Path] = self.load_playlist()
         self.current_index: Optional[int] = 0 if self.playlist else None
+        if self.playlist and not PLAYLIST_FILE.exists():
+            self.save_playlist()
         self.playing = False
         self.paused = False
         self.track_started_at: Optional[float] = None
@@ -65,13 +68,34 @@ class MusicPlayer:
 
     def load_playlist(self) -> List[Path]:
         playlist: List[Path] = []
-        if MUSIC_DIR.exists():
+        if PLAYLIST_FILE.exists():
+            for line in PLAYLIST_FILE.read_text(encoding="utf-8").splitlines():
+                path_str = line.strip()
+                if not path_str or path_str.startswith("#"):
+                    continue
+                path = Path(path_str)
+                if path.suffix.lower() in SUPPORTED_EXTENSIONS and path.exists():
+                    playlist.append(path)
+        if not playlist and MUSIC_DIR.exists():
             for path in sorted(MUSIC_DIR.iterdir()):
                 if path.suffix.lower() in SUPPORTED_EXTENSIONS:
                     playlist.append(path)
         return playlist
 
+    def save_playlist(self) -> None:
+        try:
+            PLAYLIST_FILE.write_text(
+                "\n".join(str(p.resolve()) for p in self.playlist),
+                encoding="utf-8",
+            )
+        except OSError:
+            pass
+
     def _build_ui(self) -> None:
+        self.bg_canvas = tk.Canvas(self.root, highlightthickness=0, borderwidth=0)
+        self.bg_canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        self._draw_gradient_background()
+
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("TFrame", background="#0f172a")
@@ -232,6 +256,33 @@ class MusicPlayer:
         self.next_button.grid(row=0, column=3, padx=5)
 
         self.refresh_playlist_box()
+        self.root.after(50, self._draw_gradient_background)
+
+    def _draw_gradient_background(self) -> None:
+        self.bg_canvas.delete("gradient")
+        width = int(self.root.winfo_width() or 720)
+        height = int(self.root.winfo_height() or 420)
+        steps = 80
+        start = (15, 23, 42)  # #0f172a
+        end = (37, 99, 235)  # #2563eb
+        for i in range(steps):
+            ratio = i / max(steps - 1, 1)
+            r = int(start[0] + (end[0] - start[0]) * ratio)
+            g = int(start[1] + (end[1] - start[1]) * ratio)
+            b = int(start[2] + (end[2] - start[2]) * ratio)
+            color = f"#{r:02x}{g:02x}{b:02x}"
+            y0 = int((height / steps) * i)
+            y1 = int((height / steps) * (i + 1))
+            self.bg_canvas.create_rectangle(
+                0,
+                y0,
+                width,
+                y1,
+                outline="",
+                fill=color,
+                tags="gradient",
+            )
+        self.bg_canvas.lower()
 
     def set_volume(self, value: str | float) -> None:
         try:
@@ -319,6 +370,8 @@ class MusicPlayer:
         target_path = valid_paths[0] if valid_paths else self.playlist[0]
         self.current_index = self.playlist.index(target_path)
         self.refresh_playlist_box()
+        if added_any:
+            self.save_playlist()
         if added_any or self.playlist:
             self.play()
 
