@@ -17,9 +17,9 @@ pip3 install -r requirements.txt
 ```
 
 ## Chuẩn bị nhạc
-- Tạo thư mục `music/` cùng cấp với `app.py` và đặt các file nhạc (.mp3, .wav, .ogg, .flac) vào đó; ứng dụng sẽ tự phát bài đầu tiên nếu playlist chưa có gì.
-- Playlist được lưu vào `playlist.txt` (mỗi dòng là một đường dẫn file nhạc, có thể là tuyệt đối). Bạn có thể tự thêm dòng vào file này để nạp sẵn danh sách khi mở ứng dụng.
-- Bạn có thể thêm/chọn bài khác trực tiếp trong ứng dụng bằng nút **Add music** (các bài mới cũng sẽ được lưu vào `playlist.txt`).
+- Thư mục `music/` đã có sẵn trong bộ mã nguồn; hãy chép file nhạc (.mp3, .wav, .ogg, .flac) trực tiếp vào đây để ứng dụng tự nhận. Nếu playlist đang trống, ứng dụng sẽ phát bài đầu tiên trong thư mục này.
+- Playlist được lưu vào `playlist.txt` với đường dẫn tương đối tới thư mục `music/` (nếu bài nằm trong đó). Bạn có thể mở file này và thêm tên file vào mỗi dòng để nạp sẵn danh sách.
+- Nút **Add music** sẽ sao chép file bạn chọn vào thư mục `music/` (tự đổi tên nếu trùng) rồi thêm vào playlist và lưu lại `playlist.txt`.
 
 ## Quản lý playlist trực quan
 - Danh sách playlist nằm bên trái, có scrollbar; double-click vào bài để phát ngay.

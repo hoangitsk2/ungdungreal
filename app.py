@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import platform
 import random
+import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -67,29 +68,47 @@ class MusicPlayer:
             self.playlist_box.see(self.current_index)
 
     def load_playlist(self) -> List[Path]:
+        MUSIC_DIR.mkdir(parents=True, exist_ok=True)
         playlist: List[Path] = []
         if PLAYLIST_FILE.exists():
             for line in PLAYLIST_FILE.read_text(encoding="utf-8").splitlines():
-                path_str = line.strip()
-                if not path_str or path_str.startswith("#"):
-                    continue
-                path = Path(path_str)
-                if path.suffix.lower() in SUPPORTED_EXTENSIONS and path.exists():
+                path = self._resolve_saved_path(line.strip())
+                if path:
                     playlist.append(path)
-        if not playlist and MUSIC_DIR.exists():
+        if MUSIC_DIR.exists():
             for path in sorted(MUSIC_DIR.iterdir()):
-                if path.suffix.lower() in SUPPORTED_EXTENSIONS:
+                if path.suffix.lower() in SUPPORTED_EXTENSIONS and path not in playlist:
                     playlist.append(path)
         return playlist
 
     def save_playlist(self) -> None:
         try:
             PLAYLIST_FILE.write_text(
-                "\n".join(str(p.resolve()) for p in self.playlist),
+                "\n".join(self._serialize_track_path(p) for p in self.playlist),
                 encoding="utf-8",
             )
         except OSError:
             pass
+
+    def _serialize_track_path(self, path: Path) -> str:
+        try:
+            if path.resolve().is_relative_to(MUSIC_DIR.resolve()):
+                return str(path.resolve().relative_to(MUSIC_DIR.resolve()))
+        except AttributeError:
+            # Python < 3.9 compatibility in case it matters
+            if MUSIC_DIR.resolve() in path.resolve().parents:
+                return str(path.resolve().relative_to(MUSIC_DIR.resolve()))
+        return str(path.resolve())
+
+    def _resolve_saved_path(self, raw: str) -> Optional[Path]:
+        if not raw or raw.startswith("#"):
+            return None
+        candidate = Path(raw)
+        if not candidate.is_absolute():
+            candidate = MUSIC_DIR / candidate
+        if candidate.suffix.lower() in SUPPORTED_EXTENSIONS and candidate.exists():
+            return candidate
+        return None
 
     def _build_ui(self) -> None:
         self.bg_canvas = tk.Canvas(self.root, highlightthickness=0, borderwidth=0)
@@ -360,9 +379,10 @@ class MusicPlayer:
             path = Path(file_path)
             if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
                 continue
-            valid_paths.append(path)
-            if path not in self.playlist:
-                self.playlist.append(path)
+            copied_path = self._copy_into_music_dir(path)
+            valid_paths.append(copied_path)
+            if copied_path not in self.playlist:
+                self.playlist.append(copied_path)
                 added_any = True
         if not valid_paths and not self.playlist:
             messagebox.showerror("Unsupported", "Please choose MP3, WAV, OGG, hoặc FLAC.")
@@ -374,6 +394,26 @@ class MusicPlayer:
             self.save_playlist()
         if added_any or self.playlist:
             self.play()
+
+    def _copy_into_music_dir(self, source: Path) -> Path:
+        try:
+            MUSIC_DIR.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
+        resolved_source = source.resolve()
+        if MUSIC_DIR.resolve() in resolved_source.parents:
+            return resolved_source
+        destination = MUSIC_DIR / resolved_source.name
+        counter = 1
+        while destination.exists():
+            destination = MUSIC_DIR / f"{resolved_source.stem}_{counter}{resolved_source.suffix}"
+            counter += 1
+        try:
+            shutil.copy2(resolved_source, destination)
+        except OSError as exc:
+            messagebox.showerror("Copy failed", f"Could not copy {resolved_source.name}: {exc}")
+            return resolved_source
+        return destination.resolve()
 
     def preview_selected_track(self, event: object) -> None:
         if not self.playlist:
