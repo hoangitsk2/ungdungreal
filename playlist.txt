@@ -1,0 +1,4 @@
+# Đặt mỗi đường dẫn file nhạc trên một dòng (hỗ trợ MP3/WAV/OGG/FLAC).
+# Ưu tiên ghi tên file/đường dẫn tương đối tới thư mục `music/` cùng cấp với app.py.
+# Ứng dụng sẽ tự sao chép bài được thêm qua nút "Add music" vào thư mục `music/`
+# và tự cập nhật tập tin này.
